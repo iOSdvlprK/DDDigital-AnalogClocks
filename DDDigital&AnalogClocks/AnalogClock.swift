@@ -21,9 +21,7 @@ struct ClockView: View {
     let circleRadius = 3.0
     
     var body: some View {
-        Canvas {
-            context,
-            size in
+        Canvas { context, size in
             let center = CGPoint(x: size.width / 2, y: size.height / 2)
             
             let calendar = Calendar.current
@@ -57,6 +55,21 @@ struct ClockView: View {
             hand(at: hourAngle, length: size.width * 0.25, color: .primary)
             hand(at: minuteAngle, length: size.width * 0.35, color: .primary)
             hand(at: secondAngle, length: size.width * 0.4, color: .red)
+            
+            // draw clock numbers 1-12
+            let radius = min(size.width, size.height) / 2
+            for hour in 1...12 {
+                let angle = Angle.degrees(Double(hour) / 12 * 360 - 90)
+                let text = Text("\(hour)")
+                    .font(.system(size: 12).bold())
+                
+                let textSize = context.resolve(text).measure(in: CGSize(width: 100, height: 100))
+                let textRadius = radius * 0.8
+                let textX = center.x + cos(Double(angle.radians)) * textRadius - textSize.width / 2
+                let textY = center.y + sin(Double(angle.radians)) * textRadius - textSize.height / 2
+                
+                context.draw(text, at: CGPoint(x: textX + textSize.width / 2, y: textY + textSize.height / 2))
+            }
             
             // center dot
             let centerCircle = Path(
