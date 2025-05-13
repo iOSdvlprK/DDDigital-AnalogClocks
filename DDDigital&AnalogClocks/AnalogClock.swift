@@ -18,10 +18,13 @@ struct AnalogClock: View {
 
 struct ClockView: View {
     let date: Date
-    let circleRadius = 3.0
+    let centerPointRadius = 3.0
+    let circleInset = 10.0
     
     var body: some View {
-        Canvas { context, size in
+        Canvas {
+            context,
+            size in
             let center = CGPoint(x: size.width / 2, y: size.height / 2)
             
             let calendar = Calendar.current
@@ -41,11 +44,11 @@ struct ClockView: View {
             let hourAngle = angle(for: hours * 5 + minutes / 12, unit: 60)
             
             func hand(at angle: Angle, length: CGFloat, color: Color) {
-                let angleRadians: Double = angle.radians
                 var path = Path()
-                let end = CGPoint(
-                    x: center.x + cos(Double(angleRadians)) * length,
-                    y: center.y + sin(angleRadians) * length
+                let end = toPolar(
+                    center: center,
+                    angle: angle.radians,
+                    radius: length
                 )
                 path.move(to: center)
                 path.addLine(to: end)
@@ -57,7 +60,7 @@ struct ClockView: View {
             hand(at: secondAngle, length: size.width * 0.4, color: .red)
             
             // draw clock numbers 1-12
-            let radius = min(size.width, size.height) / 2
+            let radius = min(size.width, size.height) / 2 - circleInset
             for hour in 1...12 {
                 let angle = Angle.degrees(Double(hour) / 12 * 360 - 90)
                 let text = Text("\(hour)")
@@ -65,24 +68,63 @@ struct ClockView: View {
                 
                 let textSize = context.resolve(text).measure(in: CGSize(width: 100, height: 100))
                 let textRadius = radius * 0.8
-                let textX = center.x + cos(Double(angle.radians)) * textRadius - textSize.width / 2
-                let textY = center.y + sin(Double(angle.radians)) * textRadius - textSize.height / 2
                 
-                context.draw(text, at: CGPoint(x: textX + textSize.width / 2, y: textY + textSize.height / 2))
+                let textXY = toPolar(
+                    center: center,
+                    angle: angle.radians,
+                    radius: textRadius,
+                    translation: CGPoint(
+                        x: -textSize.width / 2,
+                        y: -textSize.height / 2
+                    )
+                )
+                
+                context.draw(text, at: CGPoint(x: textXY.x + textSize.width / 2, y: textXY.y + textSize.height / 2))
             }
             
             // center dot
             let centerCircle = Path(
                 ellipseIn: CGRect(
-                    x: center.x - circleRadius,
-                    y: center.y - circleRadius,
-                    width: 2 * circleRadius,
-                    height: 2 * circleRadius
+                    x: center.x - centerPointRadius,
+                    y: center.y - centerPointRadius,
+                    width: 2 * centerPointRadius,
+                    height: 2 * centerPointRadius
                 )
             )
             
             context.fill(centerCircle, with: .color(.black))
+            
+            // tick marks - minutes and hours
+            for i in 0..<60 {
+                let angle = Angle(degrees: Double(i) / 60 * 360 - 90)
+                let isHourTick = i % 5 == 0
+                let tickLength: CGFloat = isHourTick ? 10 : 4
+                let lineWidth: CGFloat = isHourTick ? 2 : 1
+                
+                let outer = toPolar(
+                    center: center,
+                    angle: angle.radians,
+                    radius: radius
+                )
+                let inner = toPolar(
+                    center: center,
+                    angle: angle.radians,
+                    radius: radius - tickLength
+                )
+                
+                var path = Path()
+                path.move(to: inner)
+                path.addLine(to: outer)
+                context.stroke(path, with: .color(.gray), lineWidth: lineWidth)
+            }
         }
+    }
+    
+    func toPolar(center: CGPoint, angle: CGFloat, radius: CGFloat, translation: CGPoint = .zero) -> CGPoint {
+        CGPoint(
+            x: center.x + cos(Double(angle)) * radius + translation.x,
+            y: center.y + sin(Double(angle)) * radius + translation.y
+        )
     }
 }
 
