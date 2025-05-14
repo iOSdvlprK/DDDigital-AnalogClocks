@@ -10,7 +10,7 @@ import SwiftUI
 struct AnalogClock: View {
     var body: some View {
         TimelineView(.animation) { timeline in
-            let date = timeline.date
+            let date = timeline.date.addingTimeInterval(-0.5)
             ClockView(date: date)
         }
         .frame(width: 200, height: 200)
