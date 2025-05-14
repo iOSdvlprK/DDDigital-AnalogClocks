@@ -13,6 +13,7 @@ struct AnalogClock: View {
             let date = timeline.date
             ClockView(date: date)
         }
+        .frame(width: 200, height: 200)
     }
 }
 
@@ -22,16 +23,25 @@ struct ClockView: View {
     let circleInset = 10.0
     
     var body: some View {
-        Canvas {
-            context,
-            size in
+        Canvas { context, size in
             let center = CGPoint(x: size.width / 2, y: size.height / 2)
+            let radius = min(size.width, size.height) / 2 - circleInset
             
             let calendar = Calendar.current
             
             let seconds = calendar.component(.second, from: date)
             let minutes = calendar.component(.minute, from: date)
             let hours = calendar.component(.hour, from: date) % 12
+            
+            // draw the clock face circle
+            let circleRect = CGRect(
+                x: center.x - radius,
+                y: center.y - radius,
+                width: 2 * radius,
+                height: 2 * radius
+            )
+            let circlePath = Path(ellipseIn: circleRect)
+            context.stroke(circlePath, with: .color(.gray), lineWidth: 4)
             
             // angles for clock hands
             func angle(for value: Int, unit: Int) -> Angle {
@@ -60,7 +70,6 @@ struct ClockView: View {
             hand(at: secondAngle, length: size.width * 0.4, color: .red)
             
             // draw clock numbers 1-12
-            let radius = min(size.width, size.height) / 2 - circleInset
             for hour in 1...12 {
                 let angle = Angle.degrees(Double(hour) / 12 * 360 - 90)
                 let text = Text("\(hour)")
@@ -129,5 +138,11 @@ struct ClockView: View {
 }
 
 #Preview {
-    AnalogClock()
+    VStack(spacing: 40) {
+        Text("SwiftUI Canvas and TimelineView")
+            .font(.title2)
+            .bold()
+        DigitalClock()
+        AnalogClock()
+    }
 }
